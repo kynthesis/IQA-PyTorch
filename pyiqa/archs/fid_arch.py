@@ -12,6 +12,7 @@ Ref:
     CVPR, 2022
 """
 
+from email.policy import default
 import os
 from tqdm import tqdm
 from glob import glob
@@ -27,6 +28,11 @@ from .inception import InceptionV3
 from pyiqa.utils.download_util import load_file_from_url
 from pyiqa.utils.img_util import is_image_file
 from pyiqa.utils.registry import ARCH_REGISTRY
+
+default_model_urls = {
+    'ffhq_clean_trainval70k_512.npz': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/ffhq_clean_trainval70k_512.npz',
+    'ffhq_clean_trainval70k_512_kid.npz': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/ffhq_clean_trainval70k_512_kid.npz',
+}
 
 
 class ResizeDataset(torch.utils.data.Dataset):
@@ -74,20 +80,30 @@ def get_reference_statistics(name, res, mode="clean", split="test", metric="FID"
     r"""
         Load precomputed reference statistics for commonly used datasets
     """
-    base_url = "https://www.cs.cmu.edu/~clean-fid/stats/"
+    base_url = "https://www.cs.cmu.edu/~clean-fid/stats"
     if split == "custom":
         res = "na"
     if metric == "FID":
         rel_path = (f"{name}_{mode}_{split}_{res}.npz").lower()
         url = f"{base_url}/{rel_path}"
-        fpath = load_file_from_url(url)
+
+        if rel_path in default_model_urls.keys():
+            fpath = load_file_from_url(default_model_urls[rel_path])
+        else:
+            fpath = load_file_from_url(url)
+
         stats = np.load(fpath)
         mu, sigma = stats["mu"], stats["sigma"]
         return mu, sigma
     elif metric == "KID":
         rel_path = (f"{name}_{mode}_{split}_{res}_kid.npz").lower()
         url = f"{base_url}/{rel_path}"
-        fpath = load_file_from_url(url)
+
+        if rel_path in default_model_urls.keys():
+            fpath = load_file_from_url(default_model_urls[rel_path])
+        else:
+            fpath = load_file_from_url(url)
+
         stats = np.load(fpath)
         return stats["feats"]
 
@@ -194,8 +210,8 @@ def get_folder_features(fdir, model=None, num_workers=12,
     with torch.no_grad():
         for batch in pbar:
             feat = model(batch.to(device), resize_input, normalize_input)
-            feat = feat[0].squeeze(-1).squeeze(-1)
-        l_feats.append(feat.detach().cpu().numpy())
+            feat = feat[0].squeeze(-1).squeeze(-1).detach().cpu().numpy()
+            l_feats.append(feat)
     np_feats = np.concatenate(l_feats)
     return np_feats
 
@@ -229,6 +245,9 @@ class FID(nn.Module):
                 device=torch.device('cuda'),
                 verbose=True,
                 ):
+        
+        assert mode in ['clean', 'legacy_pytorch', 'legacy_tensorflow'], 'Invalid calculation mode, should be in [clean, legacy_pytorch, legacy_tensorflow]' 
+
         # if both dirs are specified, compute FID between folders
         if fdir1 is not None and fdir2 is not None:
             if not verbose:
@@ -247,8 +266,8 @@ class FID(nn.Module):
 
         # compute fid of a folder
         elif fdir1 is not None and fdir2 is None:
-            if not verbose:
-                print(f"compute FID of a folder with {dataset_name} statistics")
+            if verbose:
+                print(f"compute FID of a folder with {dataset_name}-{mode}-{dataset_split}-{dataset_res} statistics")
             fbname1 = os.path.basename(fdir1)
             np_feats1 = get_folder_features(fdir1, self.model, num_workers=num_workers, batch_size=batch_size,
                                             device=device, mode=mode, description=f"FID {fbname1}: ", verbose=verbose)
