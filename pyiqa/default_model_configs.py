@@ -47,6 +47,14 @@ DEFAULT_CONFIGS = OrderedDict({
         'metric_opts': {
             'type': 'SSIM',
             'downsample': False,
+            'test_y_channel': False,
+        },
+        'metric_mode': 'FR',
+    },
+    'ssimy': {
+        'metric_opts': {
+            'type': 'SSIM',
+            'downsample': False,
             'test_y_channel': True,
         },
         'metric_mode': 'FR',
@@ -55,6 +63,13 @@ DEFAULT_CONFIGS = OrderedDict({
         'metric_opts': {
             'type': 'PSNR',
             'test_y_channel': False,
+        },
+        'metric_mode': 'FR',
+    },
+    'psnry': {
+        'metric_opts': {
+            'type': 'PSNR',
+            'test_y_channel': True,
         },
         'metric_mode': 'FR',
     },
