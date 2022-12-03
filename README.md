@@ -10,6 +10,18 @@ An IQA toolbox with pure python and pytorch. Please refer to [Awesome-Image-Qual
 
 ![demo](demo.gif)
 
+- [:open_book: Introduction](#open_book-introduction)
+- [:zap: Quick Start](#zap-quick-start)
+  - [Dependencies and Installation](#dependencies-and-installation)
+  - [Basic Usage](#basic-usage)
+- [:hammer_and_wrench: Train](#hammer_and_wrench-train)
+  - [Dataset Preparation](#dataset-preparation)
+  - [Example Train Script](#example-train-script)
+- [:1st_place_medal: Benchmark Performances and Model Zoo](#1st_place_medal-benchmark-performances-and-model-zoo)
+  - [Results Calibration](#results-calibration)
+  - [Performance Evaluation Protocol](#performance-evaluation-protocol)
+  - [Benchmark Performance with Provided Script](#benchmark-performance-with-provided-script)
+ 
 ## :open_book: Introduction
 
 This is a image quality assessment toolbox with **pure python and pytorch**. We provide reimplementation of many mainstream full reference (FR) and no reference (NR) metrics (results are calibrated with official matlab scripts if exist). **With GPU acceleration, most of our implementations are much faster than Matlab.** Below are details of supported methods and datasets in this project.
@@ -109,8 +121,8 @@ This is a image quality assessment toolbox with **pure python and pytorch**. We 
 ### Dependencies and Installation
 - Ubuntu >= 18.04
 - Python >= 3.8
-- Pytorch >= 1.8.1
-- CUDA >= 10.1 (if use GPU)
+- Pytorch >= 1.10
+- CUDA >= 10.2 (if use GPU)
 ```
 # Install with pip
 pip install pyiqa
@@ -213,7 +225,31 @@ python pyiqa/train_nsplits.py -opt options/train/DBCNN/train_DBCNN.yml
 
 Please refer to the [results calibration](./ResultsCalibra/ResultsCalibra.md) to verify the correctness of the python implementations compared with official scripts in matlab or python.
 
-### Performances of classical metrics
+### Performance Evaluation Protocol
+
+**We use official models for evaluation if available.** Otherwise, we use the following settings to train and evaluate different models for simplicity and consistency:
+
+| Metric Type | Train | Test | Results | 
+| --- | --- | --- | --- |
+| FR | KADID-10k | CSIQ, LIVE, TID2008, TID2013 | [FR benchmark results](tests/FR_benchmark_results.csv) |
+| NR | KonIQ-10k | LIVEC, KonIQ-10k (official split), TID2013 | [NR benchmark results](tests/NR_benchmark_results.csv) |
+| Aesthetic IQA | AVA | AVA (official split)| [IAA benchmark results](tests/IAA_benchmark_results.csv) |
+
+Basically, we use the largest existing datasets for training, and cross dataset evaluation performance for fair comparison. The following models do not provide official weights, and are retrained by our scripts:
+
+| Metric Type | Model Names |
+| --- | --- | 
+| FR |  |
+| NR | `dbcnn` |
+| Aesthetic IQA | `nima`, `nima-vgg16-ava` |
+
+Notes:
+- Due to optimized training process, performance of some retrained approaches may be higher than original paper.
+- Results of KonIQ-10k, AVA are both tested with official split.
+- NIMA is only applicable to AVA dataset now. We use `inception_resnet_v2` for default `nima`.
+- MUSIQ is not included in the IAA benchmark because we do not have train/split information of the official model.
+
+### Benchmark Performance with Provided Script
 
 Here is an example script to get performance benchmark on different datasets:
 ```
@@ -228,22 +264,6 @@ python benchmark_results.py --metric_opt options/example_benchmark_metric_opts.y
 
 python benchmark_results.py --metric_opt options/example_benchmark_metric_opts.yml --data_opt options/example_benchmark_data_opts.yml
 ```
-Please refer to [FR benchmark results](tests/FR_benchmark_results.csv) and [NR benchmark results](tests/NR_benchmark_results.csv) for benchmark performances of some metrics.
-
-### Performances of deep learning models
-
-We report PLCC/SRCC here.
-
-#### Small datasets, validation of split 1
-
-| Methods | CSIQ          | TID2008       | TID2013       | LIVE          | LIVEM         | LIVEC         |
-| ------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
-| DBCNN   | 0.8965/0.9086 | 0.8322/0.8463 | 0.7985/0.8320 | 0.9418/0.9308 | 0.9461/0.9371 | 0.8375/0.8530 |
-
-#### Large dataset performance
-
-| Methods | Dataset | Kon10k | LIVEC | SPAQ | AVA | Link(pth) |
-| ------- | ------- | ------ | ----- | ---- | --- | --------- |
 
 ## :beers: Contribution
 

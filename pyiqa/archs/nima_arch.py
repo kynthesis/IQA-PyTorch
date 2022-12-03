@@ -12,11 +12,13 @@ Modified by: Chaofeng Chen (https://github.com/chaofengc)
 import torch
 import torch.nn as nn
 import timm
+from timm.data import IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
 from pyiqa.utils.registry import ARCH_REGISTRY
 from pyiqa.archs.arch_util import dist_to_mos, load_pretrained_network
 
 default_model_urls = {
-    'ava': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/NIMA_VGG16_ava-dc4e8265.pth'
+    'vgg16-ava': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/NIMA_VGG16_ava-dc4e8265.pth',
+    'inception_resnet_v2-ava': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/NIMA_InceptionV2_ava-b0c77c00.pth',
 }
 
 
@@ -50,11 +52,9 @@ class NIMA(nn.Module):
         super(NIMA, self).__init__()
         self.base_model = timm.create_model(base_model_name, pretrained=True, features_only=True)
 
-        if pretrained_model_path is None and pretrained:
-            url_key = 'ava' if isinstance(pretrained, bool) else pretrained
-            num_classes = 10 if url_key == 'ava' else num_classes
-            pretrained_model_path = default_model_urls[url_key]
-
+        # set output number of classes
+        num_classes = 10 if 'ava' in pretrained else num_classes
+        
         self.global_pool = nn.AdaptiveAvgPool2d(1)
         in_ch = self.base_model.feature_info.channels()[-1]
         self.num_classes = num_classes
@@ -67,10 +67,17 @@ class NIMA(nn.Module):
             self.classifier.append(nn.Softmax(dim=-1))
         self.classifier = nn.Sequential(*self.classifier)
 
+        if 'inception' in base_model_name:
+            default_mean = IMAGENET_INCEPTION_MEAN
+            default_std = IMAGENET_INCEPTION_STD
+
         self.default_mean = torch.Tensor(default_mean).view(1, 3, 1, 1)
         self.default_std = torch.Tensor(default_std).view(1, 3, 1, 1)
-
-        if pretrained_model_path is not None:
+        
+        if pretrained and pretrained_model_path is None:
+            url_key = f'{base_model_name}-{pretrained}'
+            load_pretrained_network(self, default_model_urls[url_key], True, weight_keys='params')
+        elif pretrained_model_path is not None:
             load_pretrained_network(self, pretrained_model_path, True, weight_keys='params')
 
     def preprocess(self, x):
