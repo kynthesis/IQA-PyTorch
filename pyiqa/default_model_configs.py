@@ -1,6 +1,4 @@
 from collections import OrderedDict
-import fnmatch
-import re
 
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
@@ -276,5 +274,55 @@ DEFAULT_CONFIGS = OrderedDict({
         },
         'metric_mode': 'NR',
     },
-
+    'clipiqa+_vitL14_512': {
+        'metric_opts': {
+            'type': 'CLIPIQA',
+            'model_type': 'clipiqa+_vitL14_512',
+            'backbone': 'ViT-L/14',
+            'pos_embedding': True,
+        },
+        'metric_mode': 'NR',
+    },
+    'clipiqa+_rn50_512': {
+        'metric_opts': {
+            'type': 'CLIPIQA',
+            'model_type': 'clipiqa+_rn50_512',
+            'backbone': 'RN50',
+            'pos_embedding': True,
+        },
+        'metric_mode': 'NR',
+    },
+    'tres': {
+        'metric_opts': {
+            'type': 'TReS',
+            'train_dataset': 'koniq',
+        },
+        'metric_mode': 'NR',
+    },
+    'tres-koniq': {
+        'metric_opts': {
+            'type': 'TReS',
+            'train_dataset': 'koniq',
+        },
+        'metric_mode': 'NR',
+    },
+    'tres-flive': {
+        'metric_opts': {
+            'type': 'TReS',
+            'train_dataset': 'flive',
+        },
+        'metric_mode': 'NR',
+    },
+    'hyperiqa': {
+        'metric_opts': {
+            'type': 'HyperNet',
+        },
+        'metric_mode': 'NR',
+    },
+    'uranker': {
+        'metric_opts': {
+            'type': 'URanker',
+        },
+        'metric_mode': 'NR',
+    }
 })

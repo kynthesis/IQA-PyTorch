@@ -1,8 +1,14 @@
 # general settings
 # name: debug_DBCNN_LIVEC
-name: debug001_HyperNet_KonIQ10k
-name: 004_HyperNet_KonIQ10k
-model_type: HyperNetModel
+name: 002_CLIPIQA_ViT-L14_KonIQ10k
+name: 003_CLIPIQA_RN50_KonIQ10k
+# name: debug_CLIPIQA
+model_type: GeneralIQAModel
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 123
+
+# name: debug_CLIPIQA
+model_type: GeneralIQAModel
 num_gpu: 1  # set num_gpu: 0 for cpu mode
 manual_seed: 123
 
@@ -18,13 +24,13 @@ datasets:
 
     augment:
       hflip: true
-      random_crop: 224
+      random_crop: 384 
     img_range: 1
 
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 4
-    batch_size_per_gpu: 96
+    batch_size_per_gpu: 8
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
 
@@ -39,9 +45,17 @@ datasets:
     num_worker_per_gpu: 4
     batch_size_per_gpu: 8
 
+    # augment:
+    #   center_crop: 384
+
 # network structures
 network:
-  type: HyperNet
+  type: CLIPIQA 
+  model_type: clipiqa+
+  # backbone: ViT-L/14
+  backbone: RN50
+  pretrained: false
+  pos_embedding: true
 
 # path
 path:
@@ -52,28 +66,30 @@ path:
 # training settings
 train:
   optim:
-    type: Adam
-    lr_basemodel: !!float 2e-5
-    lr_hypermodule: !!float 2e-4
-    lr: !!float 2e-4
-    weight_decay: !!float 5e-4
-
+    type: Adam 
+    lr: !!float 2e-3
+  
   scheduler:
-    type: MultiStepLR
-    milestones: [5, 10]
-    gamma: 0.1
+    type: CosineAnnealingLR
+    T_max: 50 
+    eta_min: 0
 
-  total_epoch: 15 
+  total_iter: 2000000
+  total_epoch: 50 
   warmup_iter: -1  # no warm up
 
   # losses
   mos_loss_opt:
-    type: L1Loss 
+    type: MSELoss
+    loss_weight: !!float 1.0
+
+  metric_loss_opt:
+    type: PLCCLoss
     loss_weight: !!float 1.0
 
 # validation settings
 val:
-  val_freq: !!float 100
+  val_freq: !!float 500
   save_img: false
   pbar: true
 
@@ -85,14 +101,11 @@ val:
     plcc:
       type: calculate_plcc
 
-    krcc:
-      type: calculate_krcc
-
 # logging settings
 logger:
-  print_freq: 20
-  save_checkpoint_freq: !!float 5e9
-  save_latest_freq: !!float 5e2
+  print_freq: 100
+  save_latest_freq: !!float 1e3 
+  log_imgs_freq: 1000
   use_tb_logger: true
   wandb:
     project: ~
@@ -102,3 +115,5 @@ logger:
 dist_params:
   backend: nccl
   port: 29500
+
+find_unused_parameters: True

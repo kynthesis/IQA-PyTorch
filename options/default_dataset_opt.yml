@@ -47,6 +47,14 @@ koniq10k:
   split_file: './datasets/train_split_info/koniq10k_official.pkl'
   phase: 'test'
 
+koniq10k-1024:
+  name: KonIQ10k
+  type: GeneralNRDataset
+  dataroot_target: './datasets/koniq10k/1024x768'
+  meta_info_file: './datasets/meta_info/meta_info_KonIQ10kDataset.csv'
+  split_file: './datasets/train_split_info/koniq10k_official.pkl'
+  phase: 'test'
+
 koniq10k++:
   name: KonIQ10k++
   type: GeneralNRDataset
@@ -66,6 +74,8 @@ spaq:
   type: GeneralNRDataset
   dataroot_target: './datasets/SPAQ/TestImage'
   meta_info_file: './datasets/meta_info/meta_info_SPAQDataset.csv'
+  augment:
+    resize: 448
 
 ava:
   name: AVA
@@ -77,17 +87,18 @@ ava:
 
 pipal:
   name: PIPAL
-  type: GeneralFRDataset
+  type: PIPALDataset 
   dataroot_target: './datasets/PIPAL/Dist_Imgs'
   dataroot_ref: './datasets/PIPAL/Train_Ref'
   meta_info_file: './datasets/meta_info/meta_info_PIPALDataset.csv'
 
 flive:
   name: FLIVE
-  type: GeneralNRDataset
+  type: FLIVEDataset 
   dataroot_target: './datasets/FLIVE_Database/database'
   meta_info_file: './datasets/meta_info/meta_info_FLIVEDataset.csv'
   split_file: './datasets/train_split_info/flive_official.pkl'
+  phase: test
 
 pieapp:
   name: PieAPPDataset

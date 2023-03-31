@@ -1,10 +1,11 @@
 import torch
-import torchvision as tv
 
 from collections import OrderedDict
 from pyiqa.default_model_configs import DEFAULT_CONFIGS
 from pyiqa.utils.registry import ARCH_REGISTRY
 from pyiqa.utils.img_util import imread2tensor
+
+from pyiqa.losses.loss_util import weight_reduce_loss
 
 
 class InferenceModel(torch.nn.Module):
@@ -14,6 +15,8 @@ class InferenceModel(torch.nn.Module):
             self,
             metric_name,
             as_loss=False,
+            loss_weight=None,
+            loss_reduction='mean',
             device=None,
             **kwargs  # Other metric options
     ):
@@ -33,7 +36,10 @@ class InferenceModel(torch.nn.Module):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = device
+
         self.as_loss = as_loss
+        self.loss_weight = loss_weight
+        self.loss_reduction = loss_reduction
 
         # =========== define metric model ===============
         net_opts = OrderedDict()
@@ -47,6 +53,11 @@ class InferenceModel(torch.nn.Module):
         self.net = ARCH_REGISTRY.get(network_type)(**net_opts)
         self.net = self.net.to(self.device)
         self.net.eval()
+
+    def to(self, device):
+        self.net.to(device)
+        self.device = torch.device(device)
+        return self
 
     def forward(self, target, ref=None, **kwargs):
 
@@ -64,8 +75,11 @@ class InferenceModel(torch.nn.Module):
                     ref = ref.unsqueeze(0)
 
             if self.metric_mode == 'FR':
-                output = self.net(target.to(self.device), ref.to(self.device))
+                output = self.net(target.to(self.device), ref.to(self.device), **kwargs)
             elif self.metric_mode == 'NR':
-                output = self.net(target.to(self.device))
+                output = self.net(target.to(self.device), **kwargs)
 
-        return output
+        if self.as_loss:
+            return weight_reduce_loss(output, self.loss_weight, self.loss_reduction)
+        else:
+            return output
