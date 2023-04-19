@@ -12,7 +12,6 @@ Ref:
     CVPR, 2022
 """
 
-from email.policy import default
 import os
 from tqdm import tqdm
 from glob import glob
@@ -26,13 +25,25 @@ import torchvision
 
 from .inception import InceptionV3
 from pyiqa.utils.download_util import load_file_from_url
-from pyiqa.utils.img_util import is_image_file
+from pyiqa.utils.img_util import is_image_file 
 from pyiqa.utils.registry import ARCH_REGISTRY
 
 default_model_urls = {
     'ffhq_clean_trainval70k_512.npz': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/ffhq_clean_trainval70k_512.npz',
     'ffhq_clean_trainval70k_512_kid.npz': 'https://github.com/chaofengc/IQA-PyTorch/releases/download/v0.1-weights/ffhq_clean_trainval70k_512_kid.npz',
 }
+
+
+def get_file_paths(dir, max_dataset_size=float("inf"), followlinks=True):
+    images = []
+    assert os.path.isdir(dir), '%s is not a valid directory' % dir
+
+    for root, _, fnames in sorted(os.walk(dir, followlinks=followlinks)):
+        for fname in fnames:
+            if is_image_file(fname):
+                path = os.path.join(root, fname)
+                images.append(path)
+    return images[:min(max_dataset_size, len(images))]
 
 
 class ResizeDataset(torch.utils.data.Dataset):
@@ -185,7 +196,7 @@ def get_folder_features(fdir, model=None, num_workers=12,
     r"""
     Compute the inception features for a folder of image files
     """
-    files = sorted([file for file in glob(os.path.join(fdir, '*')) if is_image_file(file)])
+    files = get_file_paths(fdir)
 
     if verbose:
         print(f"Found {len(files)} images in the folder {fdir}")
@@ -250,7 +261,7 @@ class FID(nn.Module):
 
         # if both dirs are specified, compute FID between folders
         if fdir1 is not None and fdir2 is not None:
-            if not verbose:
+            if verbose:
                 print("compute FID between two folders")
             fbname1 = os.path.basename(fdir1)
             np_feats1 = get_folder_features(fdir1, self.model, num_workers=num_workers, batch_size=batch_size,
