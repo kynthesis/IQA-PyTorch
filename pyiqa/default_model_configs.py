@@ -258,6 +258,7 @@ DEFAULT_CONFIGS = OrderedDict({
     'maniqa': {
         'metric_opts': {
             'type': 'MANIQA',
+            'train_dataset': 'koniq',
         },
         'metric_mode': 'NR',
     },
@@ -265,6 +266,13 @@ DEFAULT_CONFIGS = OrderedDict({
         'metric_opts': {
             'type': 'MANIQA',
             'train_dataset': 'koniq',
+        },
+        'metric_mode': 'NR',
+    },
+    'maniqa-pipal': {
+        'metric_opts': {
+            'type': 'MANIQA',
+            'train_dataset': 'pipal',
         },
         'metric_mode': 'NR',
     },
@@ -336,6 +344,18 @@ DEFAULT_CONFIGS = OrderedDict({
     'uranker': {
         'metric_opts': {
             'type': 'URanker',
+        },
+        'metric_mode': 'NR',
+    },
+    'clipscore': {
+        'metric_opts': {
+            'type': 'CLIPScore',
+        },
+        'metric_mode': 'NR', # Caption image similarity
+    },
+    'entropy': {
+        'metric_opts': {
+            'type': 'Entropy',
         },
         'metric_mode': 'NR',
     }

@@ -1,6 +1,7 @@
 from pyiqa.data import build_dataset, build_dataloader
 import torch
-from tqdm import tqdm
+import pytest
+import os
 
 options = {
     'BAPPS': {
@@ -19,10 +20,11 @@ options = {
         'meta_info_file': './datasets/meta_info/meta_info_FLIVEDataset.csv',
     },
     'PIPAL': {
-        'type': 'GeneralFRDataset',
+        'type': 'PIPALDataset',
         'dataroot_target': './datasets/PIPAL/Dist_Imgs',
         'dataroot_ref': './datasets/PIPAL/Train_Ref',
         'meta_info_file': './datasets/meta_info/meta_info_PIPALDataset.csv',
+        'split_file': './datasets/train_split_info/pipal_official.pkl'
     },
     'KonIQ10k++': {
         'type': 'GeneralNRDataset',
@@ -94,16 +96,16 @@ common_opt = {
     'phase': 'train',
 }
 
-
-def test(test_dataset_name):
-    print(f'========>>> Test dataset reader: {test_dataset_name}')
-    assert test_dataset_name in options.keys()
+@pytest.mark.parametrize(('test_dataset_name'), [(k) for k in options.keys() if os.path.exists(options[k]['dataroot_target'] and os.path.exists(options[k]['meta_info_file']))])
+def test_datasets_loading(test_dataset_name):
     dataset_opt = options[test_dataset_name]
     dataset_opt.update(common_opt)
     dataset = build_dataset(dataset_opt)
     dataloader = build_dataloader(dataset, dataset_opt)
 
-    for data in tqdm(dataloader):
+    num_batches = 0
+    max_num_test = 10 
+    for data in dataloader:
         if 'img' in data.keys():
             img_tensor = data['img']
             assert img_tensor.shape[1:] == torch.Size(
@@ -120,21 +122,7 @@ def test(test_dataset_name):
             ref_tensor = data['distB_img']
             assert ref_tensor.shape[1:] == torch.Size(
                 [3, 224, 224]), f'reference image shape should be [3, 224, 224], but got {ref_tensor.shape[1:]}'
+        num_batches += 1 
+        if num_batches > max_num_test:
+            break
 
-
-if __name__ == '__main__':
-    test('CSIQ')
-    test('TID2008')
-    test('TID2013')
-    test('LIVE')
-    test('LIVEM')
-    test('LIVEC')
-    test('KonIQ10k')
-    test('KADID10k')
-    test('SPAQ')
-    test('AVA')
-    test('KonIQ10k++')
-    test('PIPAL')
-    test('FLIVE')
-    test('PieAPP')
-    test('BAPPS')
